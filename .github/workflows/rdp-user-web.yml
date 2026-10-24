@@ -6,47 +6,18 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup RDP
+      - name: Setup
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           net user NTASK Amalia11TY /add
           net localgroup administrators NTASK /add
-          net localgroup "Remote Desktop Users" NTASK /add
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Amalia11TY" -Force)
-          net localgroup "Remote Desktop Users" runneradmin /add
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         shell: pwsh
-      - name: Tunnel
+      - name: Ngrok
         run: |
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
-          Start-Process -NoNewWindow -FilePath ".\bore.exe" -ArgumentList "local 3389 --to bore.pub" -RedirectStandardOutput "bore_log.txt"
-          
-          $assignedPort = $null
-          for ($c = 0; $c -lt 25; $c++) {
-            Start-Sleep -Seconds 2
-            if (Test-Path "bore_log.txt") {
-              $txt = Get-Content "bore_log.txt" -Raw
-              if ($txt -match 'bore\.pub:(\d+)') {
-                $assignedPort = $matches[1]
-                break
-              }
-            }
-          }
-          
-          if ($assignedPort) {
-            Write-Host "PORT ASSIGNED: $assignedPort"
-            $hostInfo = "bore.pub:$assignedPort"
-            $hostInfo | Out-File -Encoding utf8 "active_host.txt"
-          }
-      - name: Save Host Info
-        uses: actions/upload-artifact@v4
-        with:
-          name: rdp-host
-          path: active_host.txt
-          overwrite: true
-      - name: Keep Alive
-        run: |
+          Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip -DestinationPath .
+          .\ngrok.exe config add-authtoken "2SWLhyMfOOOLcSoi7vWYIRi70Hu_4jxMDVCbytHDFf4ggCjZu"
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
           $i = 0; while($i -lt 360) { Start-Sleep -Seconds 60; $i++ }
         shell: pwsh
