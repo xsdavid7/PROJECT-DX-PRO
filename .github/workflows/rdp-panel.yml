@@ -1,0 +1,22 @@
+name: RDP-PANEL
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup
+        run: |
+          net user NTASK Amalia11TY /add
+          net localgroup administrators NTASK /add
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        shell: pwsh
+      - name: Ngrok
+        run: |
+          Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip -DestinationPath .
+          .\ngrok.exe config add-authtoken "2SWLhyMfOOOLcSoi7vWYIRi70Hu_4jxMDVCbytHDFf4ggCjZu"
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
+          $i = 0; while($i -lt 360) { Start-Sleep -Seconds 60; $i++ }
+        shell: pwsh
