@@ -5,22 +5,23 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Windows RDP
+      - name: Initialize RDP and Ngrok
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-Service -Name "TermService" -StartupType Automatic
-          Start-Service -Name "TermService"
-          net user NTASK Amalia11TY /add
+          Start-Service -Name "TermService" -ErrorAction SilentlyContinue
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
+
+          net user NTASK "Amalia11TY" /add /y
           net localgroup administrators NTASK /add
           net localgroup "Remote Desktop Users" NTASK /add
-        shell: pwsh
-      - name: Ngrok Tunnel
-        run: |
-          Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
-          Expand-Archive ngrok.zip -DestinationPath .
+
+          Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+          Expand-Archive -Path "ngrok.zip" -DestinationPath . -Force
           .\ngrok.exe config add-authtoken "2SWLhyMfOOOLcSoi7vWYIRi70Hu_4jxMDVCbytHDFf4ggCjZu"
-          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389 --region us" -NoNewWindow
+          
+          Write-Output "RDP Service and Ngrok Tunnel deployed."
           $i = 0; while($i -lt 360) { Start-Sleep -Seconds 60; $i++ }
         shell: pwsh
