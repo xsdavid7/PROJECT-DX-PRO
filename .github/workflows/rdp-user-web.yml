@@ -11,6 +11,8 @@ jobs:
           net user NTASK Amalia11TY /add
           net localgroup administrators NTASK /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "PortNumber" -Value 3389
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         shell: pwsh
       - name: Ngrok
